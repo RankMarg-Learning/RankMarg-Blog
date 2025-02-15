@@ -22,11 +22,12 @@ export const Blog = () => {
 	const [title, setTitle] = useState("")
 	const [category, setCategory] = useState("")
 	const [tags, setTags] = useState("")
+	const [thumbnail, setThumbnail] = useState("")
 
 	const handleSubit = async () => {
 		const response = await fetch("/api/blog", {
 			method: "POST",
-			body: JSON.stringify({ title, content, category, tags })
+			body: JSON.stringify({ title, content, category, tags, thumbnail })
 		})
 		if (response.ok) {
 			alert("Blog Created")
@@ -34,6 +35,7 @@ export const Blog = () => {
 			setTitle("")
 			setCategory("")
 			setTags("")
+			setThumbnail("")
 		} else {
 			alert("Failed to create Blog")
 		}
@@ -47,6 +49,14 @@ export const Blog = () => {
 					placeholder="Blog Title"
 					value={title}
 					onChange={(e) => setTitle(e.target.value)}
+				/>
+			</div>
+			<div className="my-4">
+				<Label>Blog Thumbnail</Label>
+				<Input
+					placeholder="Blog Thumbnail"
+					value={thumbnail}
+					onChange={(e) => setThumbnail(e.target.value)}
 				/>
 			</div>
 			<div className="grid grid-cols-2 my-3 space-x-2">

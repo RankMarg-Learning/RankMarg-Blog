@@ -12,6 +12,7 @@ model Blog {
   slug      String  @unique
   title     String
   content   String
+  thumbnail String?
   published Boolean @default(false)
   category  String?
   tags      String?
