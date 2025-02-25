@@ -63,8 +63,11 @@ export async function GET(req: Request) {
 		}
 
 		const blogs = await prisma.blog.findMany({
-			where: whereClause
-		})
+  where: whereClause,
+  orderBy: {
+    createdAt: "desc", // Sorts in descending order
+  },
+});
 
 		return new Response(JSON.stringify(blogs), {
 			status: 200,
