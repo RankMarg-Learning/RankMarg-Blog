@@ -109,13 +109,17 @@ export default function ArticleForm({
 				seo: seoPayload
 			}
 			const isEditing = Boolean(initialData && initialData.slug)
-			const url = isEditing ? `/api/blog/${initialData!.slug}` : `/api/blog`
+			const url = isEditing
+				? `/api/v1/articles/${initialData!.slug}`
+				: `/api/v1/articles`
 			const method = isEditing ? "PUT" : "POST"
 
+			const apiKey = process.env.NEXT_PUBLIC_API_KEY || ""
 			const res = await fetch(url, {
 				method,
 				headers: {
-					"Content-Type": "application/json"
+					"Content-Type": "application/json",
+					...(apiKey ? { Authorization: apiKey } : {})
 				},
 				body: JSON.stringify(payload)
 			})

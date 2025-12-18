@@ -39,10 +39,15 @@ export default function ArticleList() {
 	const fetchList = async () => {
 		setLoading(true)
 		try {
-			const res = await fetch(`/api/blog`)
+			const apiKey = process.env.NEXT_PUBLIC_API_KEY || ""
+			const res = await fetch(`/api/v1/articles?limit=100`, {
+				headers: {
+					...(apiKey ? { Authorization: apiKey } : {})
+				}
+			})
 			if (res.ok) {
 				const data = await res.json()
-				setArticles(data || [])
+				setArticles(data.data || [])
 			} else {
 				console.error("Failed to load articles")
 			}
@@ -63,10 +68,12 @@ export default function ArticleList() {
 			`${newStatus ? "Publishing" : "Unpublishing"} article...`
 		)
 		try {
-			const res = await fetch(`/api/blog/${slug}`, {
+			const apiKey = process.env.NEXT_PUBLIC_API_KEY || ""
+			const res = await fetch(`/api/v1/articles/${slug}`, {
 				method: "PUT",
 				headers: {
-					"Content-Type": "application/json"
+					"Content-Type": "application/json",
+					...(apiKey ? { Authorization: apiKey } : {})
 				},
 				body: JSON.stringify({
 					published: newStatus
@@ -102,8 +109,12 @@ export default function ArticleList() {
 
 		const toastId = toast.loading("Deleting article...")
 		try {
-			const res = await fetch(`/api/blog/${slug}`, {
-				method: "DELETE"
+			const apiKey = process.env.NEXT_PUBLIC_API_KEY || ""
+			const res = await fetch(`/api/v1/articles/${slug}`, {
+				method: "DELETE",
+				headers: {
+					...(apiKey ? { Authorization: apiKey } : {})
+				}
 			})
 			if (res.ok || res.status === 204) {
 				toast.success("Article deleted successfully", { id: toastId })

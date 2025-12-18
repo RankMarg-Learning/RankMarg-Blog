@@ -1,71 +1,76 @@
+import {
+	createErrorResponse,
+	createSuccessResponse,
+	verifyApiKey
+} from "@/lib/api-auth"
 import prisma from "@/lib/prisma"
 import { slugify } from "@/lib/slugify"
 
+// GET /api/v1/articles/{slug} - Get single article
 export async function GET(
 	req: Request,
 	{ params }: { params: { slug: string } }
 ) {
-	const { slug } = params
 	try {
-		const blog = await prisma.article.findUnique({
+		const auth = verifyApiKey(req)
+		if (!auth.authorized) {
+			return createErrorResponse(auth.error || "Unauthorized", 401)
+		}
+
+		const { slug } = params
+
+		const article = await prisma.article.findUnique({
 			where: { slug },
-			select: {
-				slug: true,
-				title: true,
-				thumbnail: true,
-				category: true,
-				createdAt: true,
-				published: true,
+			include: {
 				tags: {
 					select: {
+						id: true,
 						name: true,
 						slug: true
 					}
 				},
-				seo: {
-					select: {
-						metaTitle: true,
-						metaDesc: true,
-						metaImage: true,
-						ogImage: true,
-						robots: true,
-						structuredData: true
-					}
-				}
+				seo: true
 			}
 		})
-		if (!blog) return new Response("Not Found", { status: 404 })
-		return new Response(JSON.stringify(blog), {
-			status: 200,
-			headers: {
-				"Content-Type": "application/json",
-				"cache-control": "public, max-age=600, stale-while-revalidate=3600"
-			}
-		})
+
+		if (!article) {
+			return createErrorResponse("Article not found", 404)
+		}
+
+		return createSuccessResponse(article)
 	} catch (error) {
-		console.error(error)
-		return new Response("Internal Server Error", { status: 500 })
+		console.error("GET /api/v1/articles/[slug] error:", error)
+		return createErrorResponse("Internal Server Error", 500)
 	}
 }
 
+// PUT /api/v1/articles/{slug} - Update article
 export async function PUT(
 	req: Request,
 	{ params }: { params: { slug: string } }
 ) {
-	const { slug } = params
 	try {
+		const auth = verifyApiKey(req)
+		if (!auth.authorized) {
+			return createErrorResponse(auth.error || "Unauthorized", 401)
+		}
+
+		const { slug } = params
 		const payload = await req.json()
 
 		const existing = await prisma.article.findUnique({
 			where: { slug },
 			include: { tags: true, seo: true }
 		})
-		if (!existing) return new Response("Not Found", { status: 404 })
+
+		if (!existing) {
+			return createErrorResponse("Article not found", 404)
+		}
 
 		const updateData: any = {}
+
 		if (typeof payload.title === "string") {
 			updateData.title = payload.title
-			// regenerate slug if title changed
 			let newSlug = slugify(payload.title)
 			if (newSlug !== slug) {
 				let count = 1
@@ -77,29 +82,27 @@ export async function PUT(
 				updateData.slug = newSlug
 			}
 		}
+
 		if (typeof payload.content === "string")
 			updateData.content = payload.content
 		if (typeof payload.category === "string")
 			updateData.category = payload.category || null
 		if (typeof payload.thumbnail === "string")
 			updateData.thumbnail = payload.thumbnail || null
-		if (typeof payload.published === "boolean") {
+		if (typeof payload.published === "boolean")
 			updateData.published = payload.published
-		}
 
 		if (payload.tags !== undefined) {
-			const tagNames =
-				typeof payload.tags === "string"
+			const tagNames = Array.isArray(payload.tags)
+				? payload.tags.map((t: any) => String(t).trim()).filter(Boolean)
+				: typeof payload.tags === "string"
 					? payload.tags
 							.split(",")
 							.map((t: string) => t.trim())
 							.filter(Boolean)
-					: Array.isArray(payload.tags)
-						? payload.tags.map((t: any) => String(t).trim()).filter(Boolean)
-						: []
+					: []
 
 			updateData.tags = {
-				// replace existing relations with new list
 				set: [],
 				connectOrCreate: tagNames.map((name: string) => ({
 					where: { name },
@@ -114,7 +117,7 @@ export async function PUT(
 			include: { tags: true, seo: true }
 		})
 
-		// handle seo upsert (using article id)
+		// Handle SEO upsert
 		if (payload.seo) {
 			try {
 				await prisma.seo.upsert({
@@ -142,41 +145,48 @@ export async function PUT(
 			}
 		}
 
-		// fetch full updated article including seo
 		const full = await prisma.article.findUnique({
 			where: { slug: updated.slug },
 			include: { tags: true, seo: true }
 		})
-		return new Response(JSON.stringify(full), {
-			status: 200,
-			headers: { "Content-Type": "application/json" }
-		})
+
+		return createSuccessResponse(full)
 	} catch (error) {
-		console.error(error)
-		return new Response("Internal Server Error", { status: 500 })
+		console.error("PUT /api/v1/articles/[slug] error:", error)
+		return createErrorResponse("Internal Server Error", 500)
 	}
 }
 
+// DELETE /api/v1/articles/{slug} - Delete article
 export async function DELETE(
 	req: Request,
 	{ params }: { params: { slug: string } }
 ) {
-	const { slug } = params
 	try {
-		const existing = await prisma.article.findUnique({ where: { slug } })
-		if (!existing) return new Response("Not Found", { status: 404 })
+		const auth = verifyApiKey(req)
+		if (!auth.authorized) {
+			return createErrorResponse(auth.error || "Unauthorized", 401)
+		}
 
-		// delete seo if exists
+		const { slug } = params
+
+		const existing = await prisma.article.findUnique({ where: { slug } })
+		if (!existing) {
+			return createErrorResponse("Article not found", 404)
+		}
+
+		// Delete SEO if exists
 		try {
 			await prisma.seo.deleteMany({ where: { articleId: existing.id } })
 		} catch (e) {
-			// ignore
+			// Ignore
 		}
 
 		await prisma.article.delete({ where: { slug } })
+
 		return new Response(null, { status: 204 })
 	} catch (error) {
-		console.error(error)
-		return new Response("Internal Server Error", { status: 500 })
+		console.error("DELETE /api/v1/articles/[slug] error:", error)
+		return createErrorResponse("Internal Server Error", 500)
 	}
 }

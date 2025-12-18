@@ -103,7 +103,20 @@ export async function GET(req: Request) {
 		const blogs = await prisma.article.findMany({
 			where: whereClause as any,
 			orderBy: { createdAt: "desc" },
-			include: { tags: true }
+			select: {
+				slug: true,
+				title: true,
+				thumbnail: true,
+				category: true,
+				createdAt: true,
+				published: true,
+				tags: {
+					select: {
+						name: true,
+						slug: true
+					}
+				}
+			}
 		})
 
 		return new Response(JSON.stringify(blogs), {

@@ -1,16 +1,12 @@
 "use client"
 
 import React, { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
 import toast from "react-hot-toast"
+import { useRouter } from "next/navigation"
 
 import ArticleForm from "./article-form"
 
-export default function EditArticle({
-	slug
-}: {
-	slug: string
-}) {
+export default function EditArticle({ slug }: { slug: string }) {
 	const [initialData, setInitialData] = useState<any | null>(null)
 	const [loading, setLoading] = useState(true)
 	const router = useRouter()
@@ -19,7 +15,12 @@ export default function EditArticle({
 		let mounted = true
 		const fetchData = async () => {
 			try {
-				const res = await fetch(`/api/blog/${slug}`)
+				const apiKey = process.env.NEXT_PUBLIC_API_KEY || ""
+				const res = await fetch(`/api/v1/articles/${slug}`, {
+					headers: {
+						...(apiKey ? { Authorization: apiKey } : {})
+					}
+				})
 				if (res.ok) {
 					const data = await res.json()
 					if (mounted) setInitialData(data)
