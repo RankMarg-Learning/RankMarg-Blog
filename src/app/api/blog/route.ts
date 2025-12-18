@@ -26,16 +26,15 @@ export async function POST(req: Request) {
 			count++
 		}
 
-		// handle tags as comma separated list (from client)
-		const tagNames =
-			typeof tags === "string"
+		// handle tags as array (from client)
+		const tagNames = Array.isArray(tags)
+			? tags.map((t: any) => String(t).trim()).filter(Boolean)
+			: typeof tags === "string"
 				? tags
 						.split(",")
 						.map((t: string) => t.trim())
 						.filter(Boolean)
-				: Array.isArray(tags)
-					? tags.map((t: any) => String(t).trim()).filter(Boolean)
-					: []
+				: []
 
 		const created = await prisma.article.create({
 			data: {

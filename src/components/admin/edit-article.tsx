@@ -2,15 +2,14 @@
 
 import React, { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import toast from "react-hot-toast"
 
 import ArticleForm from "./article-form"
 
 export default function EditArticle({
-	slug,
-	apiKey
+	slug
 }: {
 	slug: string
-	apiKey?: string
 }) {
 	const [initialData, setInitialData] = useState<any | null>(null)
 	const [loading, setLoading] = useState(true)
@@ -25,11 +24,11 @@ export default function EditArticle({
 					const data = await res.json()
 					if (mounted) setInitialData(data)
 				} else {
-					alert("Failed to load article")
+					toast.error("Failed to load article")
 				}
 			} catch (e) {
 				console.error(e)
-				alert("Failed to load article")
+				toast.error("Failed to load article")
 			} finally {
 				if (mounted) setLoading(false)
 			}
@@ -64,7 +63,6 @@ export default function EditArticle({
 			<ArticleForm
 				initialData={initialData}
 				onSaved={() => router.push("/dashboard")}
-				apiKey={apiKey}
 			/>
 		</div>
 	)

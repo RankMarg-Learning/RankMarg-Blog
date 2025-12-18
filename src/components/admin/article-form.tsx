@@ -1,7 +1,10 @@
 "use client"
 
 import React, { useEffect, useState } from "react"
+import toast from "react-hot-toast"
+import Image from "next/image"
 
+import { CategorySelect, TagSelector } from "@/components/admin/tag-selector"
 import MarkdownRender from "@/lib/markdownrender"
 
 interface Tag {
@@ -16,6 +19,7 @@ interface Article {
 	content: string
 	category?: string | null
 	thumbnail?: string | null
+	published?: boolean
 	tags?: Tag[]
 	seo?: {
 		metaTitle?: string | null
@@ -29,17 +33,15 @@ interface Article {
 
 export default function ArticleForm({
 	initialData,
-	onSaved,
-	apiKey
+	onSaved
 }: {
 	initialData?: Article | null
 	onSaved?: () => void
-	apiKey?: string
 }) {
 	const [title, setTitle] = useState("")
 	const [content, setContent] = useState("")
 	const [category, setCategory] = useState("")
-	const [tags, setTags] = useState("")
+	const [tags, setTags] = useState<string[]>([])
 	const [thumbnail, setThumbnail] = useState("")
 	const [metaTitle, setMetaTitle] = useState("")
 	const [metaDesc, setMetaDesc] = useState("")
@@ -47,6 +49,7 @@ export default function ArticleForm({
 	const [ogImage, setOgImage] = useState("")
 	const [robots, setRobots] = useState("")
 	const [structuredData, setStructuredData] = useState("")
+	const [published, setPublished] = useState(false)
 	const [loading, setLoading] = useState(false)
 
 	useEffect(() => {
@@ -55,7 +58,8 @@ export default function ArticleForm({
 			setContent(initialData.content || "")
 			setCategory(initialData.category || "")
 			setThumbnail(initialData.thumbnail || "")
-			setTags((initialData.tags || []).map((t) => t.name).join(","))
+			setPublished(initialData.published ?? false)
+			setTags((initialData.tags || []).map((t) => t.name))
 			setMetaTitle(initialData.seo?.metaTitle || "")
 			setMetaDesc(initialData.seo?.metaDesc || "")
 			setMetaImage(initialData.seo?.metaImage || "")
@@ -71,7 +75,8 @@ export default function ArticleForm({
 			setContent("")
 			setCategory("")
 			setThumbnail("")
-			setTags("")
+			setPublished(false)
+			setTags([])
 			setMetaTitle("")
 			setMetaDesc("")
 			setMetaImage("")
@@ -100,170 +105,58 @@ export default function ArticleForm({
 				category,
 				tags,
 				thumbnail,
+				published,
 				seo: seoPayload
 			}
-			let res: Response
-			if (initialData && initialData.slug) {
-				res = await fetch(`/api/blog/${initialData.slug}`, {
-					method: "PUT",
-					headers: {
-						"Content-Type": "application/json",
-						...(apiKey ? { Authorization: apiKey } : {})
-					},
-					body: JSON.stringify(payload)
-				})
-			} else {
-				res = await fetch(`/api/blog`, {
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-						...(apiKey ? { Authorization: apiKey } : {})
-					},
-					body: JSON.stringify(payload)
-				})
-			}
+			const isEditing = Boolean(initialData && initialData.slug)
+			const url = isEditing ? `/api/blog/${initialData!.slug}` : `/api/blog`
+			const method = isEditing ? "PUT" : "POST"
+
+			const res = await fetch(url, {
+				method,
+				headers: {
+					"Content-Type": "application/json"
+				},
+				body: JSON.stringify(payload)
+			})
 
 			if (!res.ok) {
 				const text = await res.text().catch(() => res.statusText)
-				alert(`Save failed: ${res.status} ${text}`)
+				toast.error(`Save failed: ${res.status} ${text}`)
 			} else {
-				alert("Saved")
+				toast.success(
+					initialData
+						? "Article updated successfully"
+						: "Article created successfully"
+				)
 				onSaved && onSaved()
 			}
 		} catch (err) {
 			console.error(err)
-			alert("Error saving article")
+			if (err instanceof SyntaxError && err.message.includes("JSON")) {
+				toast.error("Invalid JSON in structured data field")
+			} else {
+				toast.error("Error saving article")
+			}
 		} finally {
 			setLoading(false)
 		}
 	}
 	return (
-		<div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-			<form
-				onSubmit={handleSubmit}
-				className="space-y-3 bg-white p-4 rounded-md shadow-sm"
-			>
+		<div className="space-y-6">
+			{/* Header */}
+			<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
 				<div>
-					<label className="block text-sm font-medium">Title</label>
-					<input
-						className="w-full mt-1 p-2 border rounded"
-						value={title}
-						onChange={(e) => setTitle(e.target.value)}
-					/>
-				</div>
-				<div>
-					<label className="block text-sm font-medium">Thumbnail</label>
-					<input
-						className="w-full mt-1 p-2 border rounded"
-						value={thumbnail}
-						onChange={(e) => setThumbnail(e.target.value)}
-					/>
-				</div>
-				<div>
-					<label className="block text-sm font-medium">Category</label>
-					<input
-						className="w-full mt-1 p-2 border rounded"
-						value={category ?? ""}
-						onChange={(e) => setCategory(e.target.value)}
-					/>
-				</div>
-				<div>
-					<label className="block text-sm font-medium">
-						Tags (comma separated)
-					</label>
-					<input
-						className="w-full mt-1 p-2 border rounded"
-						value={tags}
-						onChange={(e) => setTags(e.target.value)}
-					/>
+					<h2 className="text-xl font-semibold text-slate-900">
+						{initialData ? "Edit article" : "Create new article"}
+					</h2>
+					<p className="mt-1 text-sm text-slate-500">
+						Manage your blog content, SEO, and preview the final output in real
+						time.
+					</p>
 				</div>
 
-				<div>
-					<label className="block text-sm font-medium">
-						Content (Markdown)
-					</label>
-					<textarea
-						rows={10}
-						className="w-full mt-1 p-2 border rounded"
-						value={content}
-						onChange={(e) => setContent(e.target.value)}
-					/>
-				</div>
-
-				<div className="border-t pt-3">
-					<h4 className="font-semibold mb-2">SEO</h4>
-					<div>
-						<label className="block text-sm font-medium">Meta Title</label>
-						<input
-							className="w-full mt-1 p-2 border rounded"
-							value={metaTitle}
-							onChange={(e) => setMetaTitle(e.target.value)}
-						/>
-					</div>
-					<div>
-						<label className="block text-sm font-medium">
-							Meta Description
-						</label>
-						<textarea
-							rows={3}
-							className="w-full mt-1 p-2 border rounded"
-							value={metaDesc}
-							onChange={(e) => setMetaDesc(e.target.value)}
-						/>
-					</div>
-					<div>
-						<label className="block text-sm font-medium">Meta Image</label>
-						<input
-							className="w-full mt-1 p-2 border rounded"
-							value={metaImage}
-							onChange={(e) => setMetaImage(e.target.value)}
-						/>
-					</div>
-					<div>
-						<label className="block text-sm font-medium">
-							Open Graph Image
-						</label>
-						<input
-							className="w-full mt-1 p-2 border rounded"
-							value={ogImage}
-							onChange={(e) => setOgImage(e.target.value)}
-						/>
-					</div>
-					<div>
-						<label className="block text-sm font-medium">Robots</label>
-						<input
-							className="w-full mt-1 p-2 border rounded"
-							value={robots}
-							onChange={(e) => setRobots(e.target.value)}
-						/>
-					</div>
-					<div>
-						<label className="block text-sm font-medium">
-							Structured Data (JSON)
-						</label>
-						<textarea
-							rows={4}
-							className="w-full mt-1 p-2 border rounded font-mono text-sm"
-							value={structuredData}
-							onChange={(e) => setStructuredData(e.target.value)}
-						/>
-					</div>
-				</div>
-
-				<div className="flex items-center gap-2">
-					<button
-						type="submit"
-						disabled={loading}
-						className="px-4 py-2 bg-blue-600 text-white rounded"
-					>
-						{initialData
-							? loading
-								? "Updating..."
-								: "Update"
-							: loading
-								? "Creating..."
-								: "Create"}
-					</button>
+				<div className="flex gap-2">
 					<button
 						type="button"
 						onClick={() => {
@@ -271,7 +164,7 @@ export default function ArticleForm({
 								setTitle("")
 								setContent("")
 								setCategory("")
-								setTags("")
+								setTags([])
 								setThumbnail("")
 								setMetaTitle("")
 								setMetaDesc("")
@@ -281,30 +174,300 @@ export default function ArticleForm({
 								setStructuredData("")
 							}
 						}}
-						className="px-3 py-2 border rounded"
+						className="inline-flex items-center rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 disabled:opacity-60"
 					>
 						Reset
 					</button>
+					<button
+						type="button"
+						onClick={() => handleSubmit()}
+						disabled={loading}
+						className="inline-flex items-center rounded-md bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-sky-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
+					>
+						{initialData
+							? loading
+								? "Updating..."
+								: "Save changes"
+							: loading
+								? "Creating..."
+								: "Publish article"}
+					</button>
 				</div>
-			</form>
+			</div>
 
-			<div className="space-y-3">
-				<div className="bg-white p-4 rounded-md shadow-sm">
-					<h3 className="font-semibold">Preview</h3>
-					<div className="mt-2">
-						<div className="text-sm text-slate-600">Meta title</div>
-						<div className="font-medium">{metaTitle || title}</div>
-						<div className="text-sm text-slate-500 mt-1">{metaDesc}</div>
-						{metaImage && (
-							<img src={metaImage} alt="meta" className="w-full mt-2 rounded" />
-						)}
+			<div className="grid grid-cols-1 xl:grid-cols-[minmax(0,2fr)_minmax(0,1.4fr)] gap-6 items-start">
+				<form
+					onSubmit={handleSubmit}
+					className="space-y-6 bg-white/70 backdrop-blur-sm border border-slate-200 rounded-xl shadow-sm p-5"
+				>
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<div className="md:col-span-2">
+							<label className="flex items-center justify-between text-sm font-medium text-slate-700">
+								<span>
+									Title <span className="text-red-500">*</span>
+								</span>
+								<span className="text-xs font-normal text-slate-400">
+									Used as H1 and default meta title
+								</span>
+							</label>
+							<input
+								className="mt-1 block w-full rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 shadow-inner focus:border-sky-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-200"
+								placeholder="Write an engaging headline..."
+								value={title}
+								onChange={(e) => setTitle(e.target.value)}
+							/>
+						</div>
+
+						<div>
+							<label className="block text-sm font-medium text-slate-700">
+								Thumbnail URL
+							</label>
+							<input
+								className="mt-1 block w-full rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 shadow-inner focus:border-sky-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-200"
+								placeholder="https://example.com/cover.jpg"
+								value={thumbnail}
+								onChange={(e) => setThumbnail(e.target.value)}
+							/>
+							<p className="mt-1 text-xs text-slate-400">
+								Display image for listing cards and article header.
+							</p>
+						</div>
+
+						<div className="flex items-center gap-2 md:col-span-2 pt-1">
+							<label className="inline-flex items-center gap-2 text-sm text-slate-700">
+								<input
+									type="checkbox"
+									className="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
+									checked={published}
+									onChange={(e) => setPublished(e.target.checked)}
+								/>
+								<span className="font-medium">Published</span>
+							</label>
+							<p className="text-xs text-slate-400">
+								If unchecked, the article is saved as draft.
+							</p>
+						</div>
+
+						<div>
+							<label className="block text-sm font-medium text-slate-700 mb-1.5">
+								Category
+							</label>
+							<CategorySelect value={category} onChange={setCategory} />
+							<p className="mt-1 text-xs text-slate-400">
+								Select the primary category for this article.
+							</p>
+						</div>
+
+						<div className="md:col-span-2">
+							<label className="block text-sm font-medium text-slate-700 mb-1.5">
+								Tags
+							</label>
+							<TagSelector selectedTags={tags} onChange={setTags} />
+							<p className="mt-2 text-xs text-slate-400">
+								Select tags from different categories to help categorize and
+								filter your content.
+							</p>
+						</div>
 					</div>
-				</div>
 
-				<div className="bg-white p-4 rounded-md shadow-sm">
-					<h3 className="font-semibold">Content Preview</h3>
-					<div className="mt-2 max-h-[60vh] overflow-auto prose">
-						<MarkdownRender content={content} />
+					<div className="space-y-2">
+						<div className="flex items-center justify-between">
+							<label className="text-sm font-medium text-slate-700">
+								Content (Markdown)
+							</label>
+							<span className="text-xs text-slate-400">
+								Supports headings, code blocks, links, and more.
+							</span>
+						</div>
+						<textarea
+							rows={14}
+							className="block w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 shadow-inner focus:border-sky-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-200 font-mono"
+							placeholder="# Your article starts here..."
+							value={content}
+							onChange={(e) => setContent(e.target.value)}
+						/>
+					</div>
+
+					<div className="pt-2 border-t border-dashed border-slate-200 space-y-4">
+						<div className="flex items-center justify-between">
+							<div>
+								<h4 className="text-sm font-semibold text-slate-800">
+									SEO settings
+								</h4>
+								<p className="mt-1 text-xs text-slate-400">
+									Optimize how this article appears in search and social.
+								</p>
+							</div>
+						</div>
+
+						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+							<div>
+								<label className="block text-sm font-medium text-slate-700">
+									Meta title
+								</label>
+								<input
+									className="mt-1 block w-full rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 shadow-inner focus:border-sky-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-200"
+									placeholder="If empty, article title will be used"
+									value={metaTitle}
+									onChange={(e) => setMetaTitle(e.target.value)}
+								/>
+							</div>
+							<div>
+								<label className="block text-sm font-medium text-slate-700">
+									Meta description
+								</label>
+								<textarea
+									rows={3}
+									className="mt-1 block w-full rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 shadow-inner focus:border-sky-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-200"
+									placeholder="1–2 sentence summary that encourages clicks."
+									value={metaDesc}
+									onChange={(e) => setMetaDesc(e.target.value)}
+								/>
+							</div>
+							<div>
+								<label className="block text-sm font-medium text-slate-700">
+									Meta image URL
+								</label>
+								<input
+									className="mt-1 block w-full rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 shadow-inner focus:border-sky-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-200"
+									placeholder="Displayed in search and link previews"
+									value={metaImage}
+									onChange={(e) => setMetaImage(e.target.value)}
+								/>
+							</div>
+							<div>
+								<label className="block text-sm font-medium text-slate-700">
+									Open Graph image URL
+								</label>
+								<input
+									className="mt-1 block w-full rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 shadow-inner focus:border-sky-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-200"
+									placeholder="Overrides meta image for social if set"
+									value={ogImage}
+									onChange={(e) => setOgImage(e.target.value)}
+								/>
+							</div>
+							<div>
+								<label className="block text-sm font-medium text-slate-700">
+									Robots
+								</label>
+								<input
+									className="mt-1 block w-full rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 shadow-inner focus:border-sky-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-200"
+									placeholder="e.g. index,follow"
+									value={robots}
+									onChange={(e) => setRobots(e.target.value)}
+								/>
+								<p className="mt-1 text-xs text-slate-400">
+									Leave empty to use default site rules.
+								</p>
+							</div>
+							<div className="md:col-span-2">
+								<label className="block text-sm font-medium text-slate-700">
+									Structured data (JSON-LD)
+								</label>
+								<textarea
+									rows={5}
+									className="mt-1 block w-full rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-900 shadow-inner focus:border-sky-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-200 font-mono"
+									placeholder='{"@context": "https://schema.org", "@type": "Article"}'
+									value={structuredData}
+									onChange={(e) => setStructuredData(e.target.value)}
+								/>
+								<p className="mt-1 text-xs text-slate-400">
+									Must be valid JSON. Used for rich results in search engines.
+								</p>
+							</div>
+						</div>
+					</div>
+
+					<div className="flex items-center justify-end gap-3 pt-2 border-t border-slate-100">
+						<button
+							type="button"
+							onClick={() => {
+								if (!initialData) {
+									setTitle("")
+									setContent("")
+									setCategory("")
+									setTags([])
+									setThumbnail("")
+									setMetaTitle("")
+									setMetaDesc("")
+									setMetaImage("")
+									setOgImage("")
+									setRobots("")
+									setStructuredData("")
+								}
+							}}
+							className="inline-flex items-center rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 disabled:opacity-60"
+						>
+							Reset
+						</button>
+						<button
+							type="submit"
+							disabled={loading}
+							className="inline-flex items-center rounded-md bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-sky-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
+						>
+							{initialData
+								? loading
+									? "Updating..."
+									: "Save changes"
+								: loading
+									? "Creating..."
+									: "Publish article"}
+						</button>
+					</div>
+				</form>
+
+				<div className="space-y-4 xl:sticky xl:top-20">
+					<div className="bg-white/70 backdrop-blur-sm border border-slate-200 rounded-xl shadow-sm p-5">
+						<h3 className="text-sm font-semibold text-slate-900">
+							Search / social preview
+						</h3>
+						<div className="mt-3 space-y-3">
+							<div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+								<div className="text-xs text-slate-500">Google result</div>
+								<div className="mt-1 text-sm text-[#1a0dab] line-clamp-2">
+									{metaTitle || title || "Your article meta title"}
+								</div>
+								<div className="mt-0.5 text-xs text-[#006621]">
+									rankmarg.in / article / {initialData?.slug}
+								</div>
+								<div className="mt-1 text-xs text-slate-600 line-clamp-2">
+									{metaDesc ||
+										"Meta description will appear here as a short summary of your article."}
+								</div>
+							</div>
+
+							{(metaImage || thumbnail) && (
+								<div className="rounded-lg border border-slate-200 overflow-hidden">
+									<Image
+										width={100}
+										height={100}
+										src={metaImage || thumbnail || ""}
+										alt="meta"
+										className="w-full h-40 object-cover"
+									/>
+								</div>
+							)}
+						</div>
+					</div>
+
+					<div className="bg-white/70 backdrop-blur-sm border border-slate-200 rounded-xl shadow-sm p-5">
+						<div className="flex items-center justify-between gap-2">
+							<h3 className="text-sm font-semibold text-slate-900">
+								Content preview
+							</h3>
+							<span className="text-xs text-slate-400">
+								Rendered from Markdown
+							</span>
+						</div>
+						<div className="mt-3 max-h-[70vh] overflow-auto prose prose-sm prose-slate">
+							{content ? (
+								<MarkdownRender content={content} />
+							) : (
+								<p className="text-xs text-slate-400">
+									Start writing content to see a live preview here.
+								</p>
+							)}
+						</div>
 					</div>
 				</div>
 			</div>

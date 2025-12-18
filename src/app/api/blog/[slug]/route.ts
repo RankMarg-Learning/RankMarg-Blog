@@ -1,8 +1,6 @@
 import prisma from "@/lib/prisma"
 import { slugify } from "@/lib/slugify"
 
-const API_KEY = process.env.API_KEY
-
 export async function GET(
 	req: Request,
 	{ params }: { params: { slug: string } }
@@ -30,11 +28,6 @@ export async function PUT(
 ) {
 	const { slug } = params
 	try {
-		const apiKey = req.headers.get("Authorization")
-		if (API_KEY && apiKey !== API_KEY) {
-			return new Response("Unauthorized", { status: 401 })
-		}
-
 		const payload = await req.json()
 
 		const existing = await prisma.article.findUnique({
@@ -44,7 +37,7 @@ export async function PUT(
 		if (!existing) return new Response("Not Found", { status: 404 })
 
 		const updateData: any = {}
-		if (payload.title) {
+		if (typeof payload.title === "string") {
 			updateData.title = payload.title
 			// regenerate slug if title changed
 			let newSlug = slugify(payload.title)
@@ -58,9 +51,16 @@ export async function PUT(
 				updateData.slug = newSlug
 			}
 		}
-		if (payload.content) updateData.content = payload.content
-		if (payload.category) updateData.category = payload.category
-		if (payload.tags) {
+		if (typeof payload.content === "string") updateData.content = payload.content
+		if (typeof payload.category === "string")
+			updateData.category = payload.category || null
+		if (typeof payload.thumbnail === "string")
+			updateData.thumbnail = payload.thumbnail || null
+		if (typeof payload.published === "boolean") {
+			updateData.published = payload.published
+		}
+
+		if (payload.tags !== undefined) {
 			const tagNames =
 				typeof payload.tags === "string"
 					? payload.tags
@@ -80,7 +80,6 @@ export async function PUT(
 				}))
 			}
 		}
-		if (payload.thumbnail) updateData.thumbnail = payload.thumbnail
 
 		const updated = await prisma.article.update({
 			where: { slug },
@@ -137,11 +136,6 @@ export async function DELETE(
 ) {
 	const { slug } = params
 	try {
-		const apiKey = req.headers.get("Authorization")
-		if (API_KEY && apiKey !== API_KEY) {
-			return new Response("Unauthorized", { status: 401 })
-		}
-
 		const existing = await prisma.article.findUnique({ where: { slug } })
 		if (!existing) return new Response("Not Found", { status: 404 })
 
