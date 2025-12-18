@@ -88,6 +88,7 @@ export async function GET(req: Request) {
 		const { searchParams } = new URL(req.url)
 		const page = parseInt(searchParams.get("page") || "1", 10)
 		const limit = parseInt(searchParams.get("limit") || "20", 10)
+		const isPublished = searchParams.get("isPublished") === "true"
 
 		if (page < 1) {
 			return createErrorResponse("Page must be greater than 0")
@@ -101,7 +102,7 @@ export async function GET(req: Request) {
 		const [articles, total] = await Promise.all([
 			prisma.article.findMany({
 				where: {
-					published: true
+					published: isPublished ? true : undefined
 				},
 				skip,
 				take: limit,
@@ -132,7 +133,7 @@ export async function GET(req: Request) {
 			}),
 			prisma.article.count({
 				where: {
-					published: true
+					published: isPublished ? true : undefined
 				}
 			})
 		])
