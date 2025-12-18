@@ -1,9 +1,9 @@
-import prisma from "@/lib/prisma"
 import {
-	verifyApiKey,
 	createErrorResponse,
-	createSuccessResponse
+	createSuccessResponse,
+	verifyApiKey
 } from "@/lib/api-auth"
+import prisma from "@/lib/prisma"
 
 // GET /api/v1/article-categories/{category}/tags - Get tags for articles in a category
 export async function GET(
@@ -29,8 +29,7 @@ export async function GET(
 					select: {
 						id: true,
 						name: true,
-						slug: true,
-						category: true
+						slug: true
 					}
 				}
 			}
@@ -68,4 +67,3 @@ export async function GET(
 		return createErrorResponse("Internal Server Error", 500)
 	}
 }
-
