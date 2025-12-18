@@ -7,7 +7,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Blog {
+model Article {
   id        String  @id @default(cuid())
   slug      String  @unique
   title     String
@@ -15,7 +15,35 @@ model Blog {
   thumbnail String?
   published Boolean @default(false)
   category  String?
-  tags      String?
+  tags      Tag[]
+
+  seo Seo?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Tag {
+  id       String    @id @default(cuid())
+  name     String    @unique
+  slug     String    @unique
+  articles Article[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Seo {
+  id             String  @id @default(cuid())
+  metaTitle      String?
+  metaDesc       String?
+  metaImage      String?
+  ogImage        String?
+  robots         String? // e.g., "index,follow"
+  structuredData Json?
+
+  articleId String?  @unique
+  article   Article? @relation(fields: [articleId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

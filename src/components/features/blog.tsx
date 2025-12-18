@@ -23,13 +23,19 @@ export const Blog = () => {
 	const [category, setCategory] = useState("")
 	const [tags, setTags] = useState("")
 	const [thumbnail, setThumbnail] = useState("")
+	const [apiKey, setApiKey] = useState("")
 
 	const handleSubit = async () => {
 		const response = await fetch("/api/blog", {
 			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				...(apiKey ? { Authorization: apiKey } : {})
+			},
 			body: JSON.stringify({ title, content, category, tags, thumbnail })
 		})
 		if (response.ok) {
+			const data = await response.json().catch(() => null)
 			alert("Blog Created")
 			setContent("")
 			setTitle("")
@@ -37,7 +43,8 @@ export const Blog = () => {
 			setTags("")
 			setThumbnail("")
 		} else {
-			alert("Failed to create Blog")
+			const text = await response.text().catch(() => "")
+			alert(`Failed to create Blog: ${response.status} ${text}`)
 		}
 	}
 
@@ -57,6 +64,14 @@ export const Blog = () => {
 					placeholder="Blog Thumbnail"
 					value={thumbnail}
 					onChange={(e) => setThumbnail(e.target.value)}
+				/>
+			</div>
+			<div className="my-4">
+				<Label>Admin API Key (paste here for admin actions)</Label>
+				<Input
+					placeholder="API Key (optional)"
+					value={apiKey}
+					onChange={(e) => setApiKey(e.target.value)}
 				/>
 			</div>
 			<div className="grid grid-cols-2 my-3 space-x-2">

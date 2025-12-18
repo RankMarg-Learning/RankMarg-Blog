@@ -3,29 +3,72 @@ import { slugify } from "@/lib/slugify"
 
 export async function POST(req: Request) {
 	try {
-		const { title, content, category, tags, thumbnail } = await req.json()
-		if (!title || !content || !category || !tags || !thumbnail) {
-			return new Response("Missing required fields", { status: 400 })
+		// Admin check: if API_KEY is defined, require it. If not defined, allow (dev mode)
+		// const API_KEY = process.env.API_KEY
+		// const apiKey = req.headers.get("Authorization")
+		// if (API_KEY && apiKey !== API_KEY) {
+		// 	return new Response("Unauthorized", { status: 401 })
+		// }
+
+		const { title, content, category, tags, thumbnail, seo } = await req.json()
+		if (!title || !content) {
+			return new Response("Missing required fields: title or content", {
+				status: 400
+			})
 		}
+
 		let slug = slugify(title)
 
 		let count = 1
 		let originalSlug = slug
-		while (await prisma.blog.findUnique({ where: { slug } })) {
+		while (await prisma.article.findUnique({ where: { slug } })) {
 			slug = `${originalSlug}-${count}`
 			count++
 		}
-		await prisma.blog.create({
+
+		// handle tags as comma separated list (from client)
+		const tagNames =
+			typeof tags === "string"
+				? tags
+						.split(",")
+						.map((t: string) => t.trim())
+						.filter(Boolean)
+				: Array.isArray(tags)
+					? tags.map((t: any) => String(t).trim()).filter(Boolean)
+					: []
+
+		const created = await prisma.article.create({
 			data: {
 				title,
 				slug,
 				content,
-				tags,
-				category,
-				thumbnail
-			}
+				category: category || null,
+				thumbnail: thumbnail || null,
+				tags: {
+					connectOrCreate: tagNames.map((name: string) => ({
+						where: { name },
+						create: { name, slug: slugify(name) }
+					}))
+				},
+				seo: seo
+					? {
+							create: {
+								metaTitle: seo.metaTitle ?? null,
+								metaDesc: seo.metaDesc ?? null,
+								metaImage: seo.metaImage ?? null,
+								ogImage: seo.ogImage ?? null,
+								robots: seo.robots ?? null,
+								structuredData: seo.structuredData ?? null
+							}
+						}
+					: undefined
+			},
+			include: { tags: true, seo: true }
 		})
-		return new Response("Blog Created", { status: 201 })
+		return new Response(JSON.stringify(created), {
+			status: 201,
+			headers: { "Content-Type": "application/json" }
+		})
 	} catch (error) {
 		console.error(error)
 		return new Response("Internal Server Error", { status: 500 })
@@ -34,7 +77,8 @@ export async function POST(req: Request) {
 
 interface WhereClauseProps {
 	category?: string
-	tags?: { contains: string }
+	// for Prisma relation filter
+	tags?: { some: { name: string } }
 }
 
 const API_KEY = process.env.API_KEY
@@ -45,11 +89,7 @@ export async function GET(req: Request) {
 	const tag = searchParams.get("tag")
 
 	try {
-		const apiKey = req.headers.get("Authorization")
-		if (apiKey !== API_KEY) {
-			return new Response("Unauthorized", { status: 401 })
-		}
-
+		// Public listing: does not require API key. Filtering supported via query string.
 		const whereClause: WhereClauseProps = {}
 
 		if (category) {
@@ -57,17 +97,15 @@ export async function GET(req: Request) {
 		}
 
 		if (tag) {
-			whereClause.tags = {
-				contains: tag // Filtering by a single tag
-			}
+			// filter by tag name
+			;(whereClause as any).tags = { some: { name: tag } }
 		}
 
-		const blogs = await prisma.blog.findMany({
-  where: whereClause,
-  orderBy: {
-    createdAt: "desc", // Sorts in descending order
-  },
-});
+		const blogs = await prisma.article.findMany({
+			where: whereClause as any,
+			orderBy: { createdAt: "desc" },
+			include: { tags: true }
+		})
 
 		return new Response(JSON.stringify(blogs), {
 			status: 200,
