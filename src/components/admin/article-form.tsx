@@ -434,7 +434,7 @@ export default function ArticleForm({
 									{metaTitle || title || "Your article meta title"}
 								</div>
 								<div className="mt-0.5 text-xs text-[#006621] dark:text-green-500">
-									rankmarg.in / article / {initialData?.slug}
+									rankmarg.in/article/{initialData?.slug}
 								</div>
 								<div className="mt-1 text-xs text-slate-600 dark:text-slate-400 line-clamp-2">
 									{metaDesc ||

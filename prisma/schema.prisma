@@ -21,6 +21,13 @@ model Article {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([id])
+  @@index([slug])
+  @@index([published])
+  @@index([category])
+  @@index([createdAt])
+  @@index([updatedAt])
 }
 
 model Tag {
@@ -31,6 +38,12 @@ model Tag {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([id])
+  @@index([name])
+  @@index([slug])
+  @@index([createdAt])
+  @@index([updatedAt])
 }
 
 model Seo {
