@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from "react"
 import toast from "react-hot-toast"
-import { useRouter } from "next/navigation"
 
 import ArticleForm from "@/components/admin/article-form"
 import {
@@ -34,7 +33,6 @@ export default function ArticleList() {
 	const [loading, setLoading] = useState(false)
 	const [editing, setEditing] = useState<Article | null>(null)
 	const [showCreate, setShowCreate] = useState(false)
-	const router = useRouter()
 
 	const fetchList = async () => {
 		setLoading(true)

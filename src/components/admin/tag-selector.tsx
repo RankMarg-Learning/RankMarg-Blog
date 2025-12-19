@@ -1,15 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
-import { X } from "lucide-react"
 
-import {
-	ARTICLE_CATEGORIES,
-	TAG_CATEGORIES,
-	TAG_CATEGORY_LABELS,
-	formatTagName,
-	type ArticleCategoryType
-} from "@/lib/article-constants"
 import {
 	Select,
 	SelectContent,
@@ -17,6 +9,14 @@ import {
 	SelectTrigger,
 	SelectValue
 } from "@/components/ui/select"
+import {
+	ARTICLE_CATEGORIES,
+	formatTagName,
+	TAG_CATEGORIES,
+	TAG_CATEGORY_LABELS,
+	type ArticleCategoryType
+} from "@/lib/article-constants"
+import { X } from "lucide-react"
 
 interface TagSelectorProps {
 	selectedTags: string[]
@@ -83,7 +83,11 @@ export function TagSelector({ selectedTags, onChange }: TagSelectorProps) {
 			{/* Tags Grid */}
 			<div>
 				<label className="block text-xs font-medium text-slate-600 mb-2">
-					{TAG_CATEGORY_LABELS[selectedCategory as keyof typeof TAG_CATEGORY_LABELS]}
+					{
+						TAG_CATEGORY_LABELS[
+							selectedCategory as keyof typeof TAG_CATEGORY_LABELS
+						]
+					}
 				</label>
 				<div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-48 overflow-y-auto rounded-md border border-slate-200 p-3">
 					{TAG_CATEGORIES[selectedCategory as keyof typeof TAG_CATEGORIES].map(
@@ -118,7 +122,7 @@ interface CategorySelectProps {
 
 export function CategorySelect({ value, onChange }: CategorySelectProps) {
 	return (
-		<Select value={value || ""} onValueChange={onChange}>
+		<Select value={value || undefined} onValueChange={onChange}>
 			<SelectTrigger className="w-full">
 				<SelectValue placeholder="Select article category" />
 			</SelectTrigger>
@@ -132,4 +136,3 @@ export function CategorySelect({ value, onChange }: CategorySelectProps) {
 		</Select>
 	)
 }
-

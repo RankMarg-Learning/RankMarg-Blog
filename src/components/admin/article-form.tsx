@@ -56,7 +56,7 @@ export default function ArticleForm({
 		if (initialData) {
 			setTitle(initialData.title || "")
 			setContent(initialData.content || "")
-			setCategory(initialData.category || "")
+			setCategory(initialData.category ?? "")
 			setThumbnail(initialData.thumbnail || "")
 			setPublished(initialData.published ?? false)
 			setTags((initialData.tags || []).map((t) => t.name))
@@ -256,7 +256,11 @@ export default function ArticleForm({
 							<label className="block text-sm font-medium text-slate-700 mb-1.5 dark:text-slate-300">
 								Category
 							</label>
-							<CategorySelect value={category} onChange={setCategory} />
+							<CategorySelect
+								key={initialData?.id || initialData?.slug || "new"}
+								value={category}
+								onChange={setCategory}
+							/>
 							<p className="mt-1 text-xs text-slate-400">
 								Select the primary category for this article.
 							</p>
