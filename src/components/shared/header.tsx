@@ -1,5 +1,4 @@
 import { Nav } from "@/shared"
-import { Theme } from "@/widgets"
 import { Brand } from "@/ui"
 
 export const Header = () => {
@@ -9,10 +8,6 @@ export const Header = () => {
 				<div className="flex gap-4 lg:gap-6 items-center">
 					<Brand />
 					<Nav />
-				</div>
-
-				<div className="flex items-center">
-					<Theme />
 				</div>
 			</div>
 		</header>

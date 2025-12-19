@@ -41,6 +41,7 @@ Get paginated list of published articles.
 
 - `page` (optional, default: 1) - Page number
 - `limit` (optional, default: 20, max: 100) - Items per page
+- `isPublished` (optional, default: undefined) - Publish Status
 
 **Response:**
 

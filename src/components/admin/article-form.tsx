@@ -253,7 +253,7 @@ export default function ArticleForm({
 						</div>
 
 						<div>
-							<label className="block text-sm font-medium text-slate-700 mb-1.5">
+							<label className="block text-sm font-medium text-slate-700 mb-1.5 dark:text-slate-300">
 								Category
 							</label>
 							<CategorySelect value={category} onChange={setCategory} />
@@ -263,7 +263,7 @@ export default function ArticleForm({
 						</div>
 
 						<div className="md:col-span-2">
-							<label className="block text-sm font-medium text-slate-700 mb-1.5">
+							<label className="block text-sm font-medium text-slate-700 mb-1.5 dark:text-slate-300">
 								Tags
 							</label>
 							<TagSelector selectedTags={tags} onChange={setTags} />
@@ -276,7 +276,7 @@ export default function ArticleForm({
 
 					<div className="space-y-2">
 						<div className="flex items-center justify-between">
-							<label className="text-sm font-medium text-slate-700">
+							<label className="text-sm font-medium text-slate-700 dark:text-slate-300">
 								Content (Markdown)
 							</label>
 							<span className="text-xs text-slate-400">
@@ -295,7 +295,7 @@ export default function ArticleForm({
 					<div className="pt-2 border-t border-dashed border-slate-200 space-y-4">
 						<div className="flex items-center justify-between">
 							<div>
-								<h4 className="text-sm font-semibold text-slate-800">
+								<h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
 									SEO settings
 								</h4>
 								<p className="mt-1 text-xs text-slate-400">
@@ -306,7 +306,7 @@ export default function ArticleForm({
 
 						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 							<div>
-								<label className="block text-sm font-medium text-slate-700">
+								<label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
 									Meta title
 								</label>
 								<input
@@ -317,7 +317,7 @@ export default function ArticleForm({
 								/>
 							</div>
 							<div>
-								<label className="block text-sm font-medium text-slate-700">
+								<label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
 									Meta description
 								</label>
 								<textarea
@@ -329,7 +329,7 @@ export default function ArticleForm({
 								/>
 							</div>
 							<div>
-								<label className="block text-sm font-medium text-slate-700">
+								<label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
 									Meta image URL
 								</label>
 								<input
@@ -340,7 +340,7 @@ export default function ArticleForm({
 								/>
 							</div>
 							<div>
-								<label className="block text-sm font-medium text-slate-700">
+								<label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
 									Open Graph image URL
 								</label>
 								<input
@@ -351,7 +351,7 @@ export default function ArticleForm({
 								/>
 							</div>
 							<div>
-								<label className="block text-sm font-medium text-slate-700">
+								<label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
 									Robots
 								</label>
 								<input
@@ -365,7 +365,7 @@ export default function ArticleForm({
 								</p>
 							</div>
 							<div className="md:col-span-2">
-								<label className="block text-sm font-medium text-slate-700">
+								<label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
 									Structured data (JSON-LD)
 								</label>
 								<textarea
@@ -422,19 +422,21 @@ export default function ArticleForm({
 
 				<div className="space-y-4 xl:sticky xl:top-20">
 					<div className="bg-white/70 backdrop-blur-sm border border-slate-200 rounded-xl shadow-sm p-5">
-						<h3 className="text-sm font-semibold text-slate-900">
+						<h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
 							Search / social preview
 						</h3>
 						<div className="mt-3 space-y-3">
 							<div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
-								<div className="text-xs text-slate-500">Google result</div>
+								<div className="text-xs text-slate-500 dark:text-slate-400">
+									Google result
+								</div>
 								<div className="mt-1 text-sm text-[#1a0dab] line-clamp-2">
 									{metaTitle || title || "Your article meta title"}
 								</div>
-								<div className="mt-0.5 text-xs text-[#006621]">
+								<div className="mt-0.5 text-xs text-[#006621] dark:text-green-500">
 									rankmarg.in / article / {initialData?.slug}
 								</div>
-								<div className="mt-1 text-xs text-slate-600 line-clamp-2">
+								<div className="mt-1 text-xs text-slate-600 dark:text-slate-400 line-clamp-2">
 									{metaDesc ||
 										"Meta description will appear here as a short summary of your article."}
 								</div>
