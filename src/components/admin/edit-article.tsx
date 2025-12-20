@@ -53,7 +53,7 @@ export default function EditArticle({ slug }: { slug: string }) {
 					Back
 				</button>
 				<a
-					href={`/${initialData.slug}`}
+					href={`https://www.rankmarg.in/articles/${initialData.slug}`}
 					target="_blank"
 					rel="noreferrer"
 					className="px-3 py-1 border rounded"

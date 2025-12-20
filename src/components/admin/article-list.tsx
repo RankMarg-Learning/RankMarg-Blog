@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react"
 import toast from "react-hot-toast"
+import { useRouter } from "next/navigation"
 
 import ArticleForm from "@/components/admin/article-form"
 import {
@@ -31,9 +32,7 @@ interface Article {
 export default function ArticleList() {
 	const [articles, setArticles] = useState<Article[]>([])
 	const [loading, setLoading] = useState(false)
-	const [editing, setEditing] = useState<Article | null>(null)
-	const [showCreate, setShowCreate] = useState(false)
-
+	const router = useRouter()
 	const fetchList = async () => {
 		setLoading(true)
 		try {
@@ -149,54 +148,13 @@ export default function ArticleList() {
 					<button
 						className="inline-flex items-center rounded-md bg-sky-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-sky-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2"
 						onClick={() => {
-							setShowCreate(!showCreate)
-							setEditing(null)
+							router.push("/article/add")
 						}}
 					>
-						{showCreate ? "Close creator" : "New article"}
+						New article
 					</button>
 				</div>
 			</div>
-
-			{showCreate && (
-				<div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
-					<h4 className="text-sm font-semibold text-slate-800 mb-3">
-						Create new article
-					</h4>
-					<ArticleForm
-						onSaved={() => {
-							setShowCreate(false)
-							fetchList()
-						}}
-					/>
-				</div>
-			)}
-
-			{editing && !showCreate && (
-				<div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
-					<div className="flex items-center justify-between mb-3">
-						<div>
-							<h4 className="text-sm font-semibold text-slate-800">
-								Editing: {editing.title}
-							</h4>
-							<p className="text-xs text-slate-500">Slug: /{editing.slug}</p>
-						</div>
-						<button
-							className="text-xs text-slate-500 hover:text-slate-700"
-							onClick={() => setEditing(null)}
-						>
-							Close
-						</button>
-					</div>
-					<ArticleForm
-						initialData={editing}
-						onSaved={() => {
-							setEditing(null)
-							fetchList()
-						}}
-					/>
-				</div>
-			)}
 
 			<div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
 				<div className="overflow-x-auto">
@@ -246,9 +204,6 @@ export default function ArticleList() {
 											<div className="font-medium text-slate-900 line-clamp-2">
 												{a.title}
 											</div>
-											<div className="mt-0.5 text-[11px] text-slate-500">
-												/{a.slug}
-											</div>
 										</td>
 										<td className="px-4 py-3 align-top">
 											{a.category ? (
@@ -259,7 +214,7 @@ export default function ArticleList() {
 												<span className="text-xs text-slate-400">—</span>
 											)}
 										</td>
-										<td className="px-4 py-3 align-top">
+										<td className="px-4 py-3 align-top truncate">
 											<div className="flex flex-wrap gap-1">
 												{(a.tags || []).length === 0 ? (
 													<span className="text-xs text-slate-400">—</span>
@@ -295,7 +250,7 @@ export default function ArticleList() {
 											<div className="flex justify-end gap-2">
 												<button
 													className="inline-flex items-center rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50"
-													onClick={() => setEditing(a)}
+													onClick={() => router.push(`/article/${a.slug}/edit`)}
 												>
 													Quick edit
 												</button>

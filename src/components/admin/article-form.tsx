@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react"
 import toast from "react-hot-toast"
 import Image from "next/image"
+import { useRouter } from "next/navigation"
 
 import { CategorySelect, TagSelector } from "@/components/admin/tag-selector"
 import MarkdownRender from "@/lib/markdownrender"
@@ -38,18 +39,25 @@ export default function ArticleForm({
 	initialData?: Article | null
 	onSaved?: () => void
 }) {
-	const [title, setTitle] = useState("")
-	const [content, setContent] = useState("")
-	const [category, setCategory] = useState("")
-	const [tags, setTags] = useState<string[]>([])
-	const [thumbnail, setThumbnail] = useState("")
-	const [metaTitle, setMetaTitle] = useState("")
-	const [metaDesc, setMetaDesc] = useState("")
-	const [metaImage, setMetaImage] = useState("")
-	const [ogImage, setOgImage] = useState("")
-	const [robots, setRobots] = useState("")
-	const [structuredData, setStructuredData] = useState("")
-	const [published, setPublished] = useState(false)
+	const router = useRouter()
+	const [title, setTitle] = useState(initialData?.title || "")
+	const [content, setContent] = useState(initialData?.content || "")
+	const [category, setCategory] = useState(initialData?.category ?? "")
+	const [tags, setTags] = useState<string[]>(
+		(initialData?.tags || []).map((t) => t.name)
+	)
+	const [thumbnail, setThumbnail] = useState(initialData?.thumbnail || "")
+	const [metaTitle, setMetaTitle] = useState(initialData?.seo?.metaTitle || "")
+	const [metaDesc, setMetaDesc] = useState(initialData?.seo?.metaDesc || "")
+	const [metaImage, setMetaImage] = useState(initialData?.seo?.metaImage || "")
+	const [ogImage, setOgImage] = useState(initialData?.seo?.ogImage || "")
+	const [robots, setRobots] = useState(initialData?.seo?.robots || "")
+	const [structuredData, setStructuredData] = useState(
+		initialData?.seo?.structuredData
+			? JSON.stringify(initialData.seo.structuredData, null, 2)
+			: ""
+	)
+	const [published, setPublished] = useState(initialData?.published ?? false)
 	const [loading, setLoading] = useState(false)
 
 	useEffect(() => {
@@ -134,6 +142,7 @@ export default function ArticleForm({
 						: "Article created successfully"
 				)
 				onSaved && onSaved()
+				router.push(`/dashboard`)
 			}
 		} catch (err) {
 			console.error(err)
@@ -205,7 +214,7 @@ export default function ArticleForm({
 					className="space-y-6 bg-white/70 backdrop-blur-sm border border-slate-200 rounded-xl shadow-sm p-5"
 				>
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-						<div className="md:col-span-2">
+						<div className="md:col-span-1">
 							<label className="flex items-center justify-between text-sm font-medium text-slate-700">
 								<span>
 									Title <span className="text-red-500">*</span>
@@ -256,11 +265,7 @@ export default function ArticleForm({
 							<label className="block text-sm font-medium text-slate-700 mb-1.5 dark:text-slate-300">
 								Category
 							</label>
-							<CategorySelect
-								key={initialData?.id || initialData?.slug || "new"}
-								value={category}
-								onChange={setCategory}
-							/>
+							<CategorySelect value={category} onChange={setCategory} />
 							<p className="mt-1 text-xs text-slate-400">
 								Select the primary category for this article.
 							</p>
@@ -426,6 +431,26 @@ export default function ArticleForm({
 
 				<div className="space-y-4 xl:sticky xl:top-20">
 					<div className="bg-white/70 backdrop-blur-sm border border-slate-200 rounded-xl shadow-sm p-5">
+						<div className="flex items-center justify-between gap-2">
+							<h3 className="text-sm font-semibold text-slate-900">
+								Content preview
+							</h3>
+							<span className="text-xs text-slate-400">
+								Rendered from Markdown
+							</span>
+						</div>
+						<div className="mt-3 max-h-[70vh] overflow-auto prose prose-sm prose-slate">
+							{content ? (
+								<MarkdownRender content={content} />
+							) : (
+								<p className="text-xs text-slate-400">
+									Start writing content to see a live preview here.
+								</p>
+							)}
+						</div>
+					</div>
+
+					<div className="bg-white/70 backdrop-blur-sm border border-slate-200 rounded-xl shadow-sm p-5">
 						<h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
 							Search / social preview
 						</h3>
@@ -456,26 +481,6 @@ export default function ArticleForm({
 										className="w-full h-40 object-cover"
 									/>
 								</div>
-							)}
-						</div>
-					</div>
-
-					<div className="bg-white/70 backdrop-blur-sm border border-slate-200 rounded-xl shadow-sm p-5">
-						<div className="flex items-center justify-between gap-2">
-							<h3 className="text-sm font-semibold text-slate-900">
-								Content preview
-							</h3>
-							<span className="text-xs text-slate-400">
-								Rendered from Markdown
-							</span>
-						</div>
-						<div className="mt-3 max-h-[70vh] overflow-auto prose prose-sm prose-slate">
-							{content ? (
-								<MarkdownRender content={content} />
-							) : (
-								<p className="text-xs text-slate-400">
-									Start writing content to see a live preview here.
-								</p>
 							)}
 						</div>
 					</div>
